@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hakki Tech</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg:        #0b0d13;
+            --bg2:       #151822;
+            --text:      #f2f4ff;
+            --hint:      #8b90a7;
+            --link:      #7c83ff;
+            --btn:       #6c72f5;
+            --btn-text:  #ffffff;
+            --accent:    #8e94ff;
+            --green:     #3dd68c;
+            --amber:     #ffb224;
+            --red:       #f97066;
+            --border:    rgba(255,255,255,0.08);
+            --glass:     rgba(255,255,255,0.04);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0; }
+
+        body {
+            background: radial-gradient(ellipse at 20% 20%, #181c2c 0%, var(--bg) 70%);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+            min-height: 100vh;
+            overscroll-behavior: none;
+            line-height: 1.5;
+        }
+
+        .hide { display: none !important; }
+
+        /* ── Анимированный фоновый свет ── */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(108,114,245,0.06) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 60%, rgba(61,214,140,0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Основной контент поверх фона */
+        header, main, nav, #toast { position: relative; z-index: 10; }
+
+        /* ── Навигация ── */
+        .nav-btn {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 10px 4px 6px; color: var(--hint); font-size: 10px; font-weight: 600;
+            transition: color 0.2s, border-color 0.2s;
+            border-top: 2px solid transparent; position: relative;
+        }
+        .active-tab { color: var(--accent); border-top-color: var(--accent); }
+        .active-tab i { color: var(--accent); }
+
+        /* ── Карточки товаров ── */
+        .product-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            backdrop-filter: blur(12px);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+            animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .product-card:active {
+            transform: scale(0.98);
+            border-color: rgba(108,114,245,0.3);
+        }
+
+        /* ── Кнопка Добавить ── */
+        .btn-add {
+            background: var(--btn);
+            color: var(--btn-text);
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 10px 20px;
+            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+            display: flex; align-items: center; gap: 6px;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(108,114,245,0.25);
+        }
+        .btn-add:active { transform: scale(0.95); background: #5a60d6; }
+        .btn-add.added {
+            background: rgba(255,255,255,0.06);
+            color: var(--accent);
+            border: 1px solid rgba(108,114,245,0.3);
+            box-shadow: none;
+        }
+
+        /* ── Hero баннер ── */
+        .hero-banner {
+            background: linear-gradient(120deg, #1e1f32 0%, #131523 100%);
+            border: 1px solid rgba(108,114,245,0.15);
+            border-radius: 28px;
+            overflow: hidden; position: relative;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .hero-glow {
+            position: absolute; width: 220px; height: 220px;
+            background: radial-gradient(circle, rgba(108,114,245,0.25) 0%, transparent 70%);
+            top: -80px; right: -80px; pointer-events: none;
+        }
+
+        /* ── Корзина ── */
+        .cart-item {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px;
+            backdrop-filter: blur(8px);
+        }
+        .cart-counter-controls {
+            display: flex; align-items: center;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 14px; overflow: hidden;
+        }
+        .cart-counter-controls button {
+            width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: var(--hint);
+            transition: background 0.15s; background: transparent; border: none; cursor: pointer;
+        }
+        .cart-counter-controls button:active { background: rgba(255,255,255,0.08); }
+        .cart-counter-controls span {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            min-width: 32px; text-align: center;
+        }
+
+        /* ── Аватар ── */
+        #user-avatar {
+            width: 64px; height: 64px; border-radius: 20px;
+            background: linear-gradient(135deg, var(--btn), var(--accent));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; font-weight: 800; color: #fff; flex-shrink: 0;
+        }
+        #user-avatar img { width: 100%; height: 100%; border-radius: 20px; object-fit: cover; }
+
+        /* ── Реферальная ссылка ── */
+        .ref-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px 16px;
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        }
+        .ref-box code {
+            font-family: 'JetBrains Mono', monospace; font-size: 10px;
+            color: var(--hint); word-break: break-all;
+        }
+
+        /* ── Статистика ── */
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px; text-align: center;
+            backdrop-filter: blur(8px);
+        }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #1e2030; border: 1px solid rgba(108,114,245,0.3);
+            color: var(--text); font-size: 13px; font-weight: 600;
+            padding: 12px 22px; border-radius: 100px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 200; white-space: nowrap;
+            backdrop-filter: blur(12px);
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ── Анимация появления ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Скроллбар ── */
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen relative">
+
+    <header class="sticky top-0 z-50 flex justify-between items-center px-4 py-3 backdrop-blur-xl"
+            style="background: rgba(11,13,19,0.7); border-bottom: 1px solid var(--border);">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white text-lg"
+                 style="background: linear-gradient(135deg, var(--btn), var(--accent));">H</div>
+            <div>
+                <h1 class="text-sm font-bold tracking-tight" style="color: var(--text);">HAKKI TECH</h1>
+                <p class="text-[10px] mt-0.5" style="color: var(--hint);">AI &amp; Mini Apps</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+             style="background: rgba(255,178,36,0.08); border: 1px solid rgba(255,178,36,0.2);">
+            <i class="fa-solid fa-diamond text-[11px]" style="color: var(--amber);"></i>
+            <span id="user-balance" class="text-xs font-bold" style="font-family: 'JetBrains Mono', monospace; color: var(--amber);">1 250</span>
+        </div>
+    </header>
+
+    <main class="flex-grow overflow-y-auto px-4 pt-4 pb-28 relative z-10">
+
+        <!-- Каталог -->
+        <section id="tab-catalog" class="space-y-5">
+
+            <!-- Hero -->
+            <div class="hero-banner p-5">
+                <div class="hero-glow"></div>
+                <div class="relative z-10">
+                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest"
+                          style="background: rgba(108,114,245,0.15); color: var(--accent);">🔥 Топ-решения</span>
+                    <h2 class="text-2xl font-black mt-2 leading-tight">Умные боты и<br>Mini Apps под ключ</h2>
+                    <p class="text-xs mt-2 max-w-[240px]" style="color: var(--hint);">
+                        Создаём ИИ‑сотрудников, магазины, автоворонки. Срок от 7 дней.
+                    </p>
+                    <div class="flex items-center gap-1.5 mt-3">
+                        <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: var(--green);"></span>
+                        <span class="text-[10px] font-medium" style="color: var(--green);">Открыты для заказов</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-robot absolute right-4 bottom-2 text-7xl"
+                   style="color: rgba(108,114,245,0.08);"></i>
+            </div>
+
+            <!-- Категории -->
+            <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width: none;">
+                <button class="text-xs px-3.5 py-1.5 rounded-xl font-semibold whitespace-nowrap"
+                        style="background: var(--btn); color: var(--btn-text);">Все</button>
+                <button class="text-xs px-3.5 py-1.5 rounded-xl font-semibold whitespace-nowrap"
+                        style="background: var(--glass); color: var(--hint); border: 1px solid var(--border);">Нейросети</button>
+                <button class="text-xs px-3.5 py-1.5 rounded-xl font-semibold whitespace-nowrap"
+                        style="background: var(--glass); color: var(--hint); border: 1px solid var(--border);">Mini Apps</button>
+                <button class="text-xs px-3.5 py-1.5 rounded-xl font-semibold whitespace-nowrap"
+                        style="background: var(--glass); color: var(--hint); border: 1px solid var(--border);">Автоворонки</button>
+            </div>
+
+            <!-- Товары -->
+            <div class="space-y-3" id="products-list">
+
+                <!-- Товар 0 -->
+                <div class="product-card p-4 flex flex-col gap-3">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                             style="background: rgba(108,114,245,0.12);">🧠</div>
+                        <div class="flex-grow">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(108,114,245,0.15); color: #b4b9ff;">AI Employee</span>
+                            <h4 class="text-sm font-bold mt-1.5">ИИ-Консультант (Поддержка)</h4>
+                        </div>
+                    </div>
+                    <p class="text-xs leading-relaxed" style="color: var(--hint);">
+                        Заменяет до 4 сотрудников. 24/7 в Telegram и WhatsApp. Обучается под ваш бизнес.
+                    </p>
+                    <div class="flex items-center justify-between pt-3" style="border-top: 1px solid var(--border);">
+                        <div>
+                            <p class="text-[10px]" style="color: var(--hint);">Стоимость</p>
+                            <p class="text-base font-bold mt-0.5" style="font-family: 'JetBrains Mono', monospace; color: var(--green);">30 000 ₽</p>
+                        </div>
+                        <button id="btn-0" onclick="addToCart(0)" class="btn-add">
+                            <i class="fa-solid fa-plus text-xs"></i> Добавить
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Товар 1 -->
+                <div class="product-card p-4 flex flex-col gap-3" style="animation-delay: 0.1s;">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                             style="background: rgba(255,178,36,0.12);">📱</div>
+                        <div class="flex-grow">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(255,178,36,0.15); color: #ffd580;">WebApp</span>
+                            <h4 class="text-sm font-bold mt-1.5">Кастомный Mini App Магазин</h4>
+                        </div>
+                    </div>
+                    <p class="text-xs leading-relaxed" style="color: var(--hint);">
+                        Магазин внутри Telegram: каталог, корзина, приём платежей. Современный Web-интерфейс.
+                    </p>
+                    <div class="flex items-center justify-between pt-3" style="border-top: 1px solid var(--border);">
+                        <div>
+                            <p class="text-[10px]" style="color: var(--hint);">Стоимость</p>
+                            <p class="text-base font-bold mt-0.5" style="font-family: 'JetBrains Mono', monospace; color: var(--green);">45 000 ₽</p>
+                        </div>
+                        <button id="btn-1" onclick="addToCart(1)" class="btn-add">
+                            <i class="fa-solid fa-plus text-xs"></i> Добавить
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Товар 2 -->
+                <div class="product-card p-4 flex flex-col gap-3" style="animation-delay: 0.2s;">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                             style="background: rgba(61,214,140,0.12);">📈</div>
+                        <div class="flex-grow">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(61,214,140,0.15); color: #7ee3b8;">Marketing</span>
+                            <h4 class="text-sm font-bold mt-1.5">Умная Автоворонка Продаж</h4>
+                        </div>
+                    </div>
+                    <p class="text-xs leading-relaxed" style="color: var(--hint);">
+                        Прогрев и квалификация лидов. Увеличивает конверсию до 3 раз. Полная автоматизация.
+                    </p>
+                    <div class="flex items-center justify-between pt-3" style="border-top: 1px solid var(--border);">
+                        <div>
+                            <p class="text-[10px]" style="color: var(--hint);">Стоимость</p>
+                            <p class="text-base font-bold mt-0.5" style="font-family: 'JetBrains Mono', monospace; color: var(--green);">15 000 ₽</p>
+                        </div>
+                        <button id="btn-2" onclick="addToCart(2)" class="btn-add">
+                            <i class="fa-solid fa-plus text-xs"></i> Добавить
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Товар 3 -->
+                <div class="product-card p-4 flex flex-col gap-3" style="animation-delay: 0.3s;">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                             style="background: rgba(249,112,102,0.12);">🤖</div>
+                        <div class="flex-grow">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(249,112,102,0.15); color: #fca5a5;">Bot Dev</span>
+                            <h4 class="text-sm font-bold mt-1.5">Telegram-бот под ключ</h4>
+                        </div>
+                    </div>
+                    <p class="text-xs leading-relaxed" style="color: var(--hint);">
+                        Индивидуальный бот: приём заказов, CRM, уведомления, аналитика. Любая сложность.
+                    </p>
+                    <div class="flex items-center justify-between pt-3" style="border-top: 1px solid var(--border);">
+                        <div>
+                            <p class="text-[10px]" style="color: var(--hint);">Стоимость</p>
+                            <p class="text-base font-bold mt-0.5" style="font-family: 'JetBrains Mono', monospace; color: var(--green);">25 000 ₽</p>
+                        </div>
+                        <button id="btn-3" onclick="addToCart(3)" class="btn-add">
+                            <i class="fa-solid fa-plus text-xs"></i> Добавить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Корзина -->
+        <section id="tab-cart" class="space-y-4 hide">
+            <div class="flex items-center gap-2 mb-1">
+                <i class="fa-solid fa-basket-shopping text-lg" style="color: var(--accent);"></i>
+                <h3 class="text-lg font-black">Корзина</h3>
+            </div>
+
+            <div id="cart-empty" class="flex flex-col items-center justify-center py-20 gap-4">
+                <div class="w-20 h-20 rounded-2xl flex items-center justify-center"
+                     style="background: var(--glass); border: 1px solid var(--border);">
+                    <i class="fa-solid fa-basket-shopping text-3xl" style="color: var(--hint);"></i>
+                </div>
+                <p class="text-sm font-semibold" style="color: var(--hint);">Здесь пока пусто</p>
+                <button onclick="switchTab('catalog')" class="btn-add mt-1">
+                    <i class="fa-solid fa-layer-group text-xs"></i> В каталог
+                </button>
+            </div>
+
+            <div id="cart-items" class="space-y-3"></div>
+
+            <div id="cart-summary" class="hide space-y-3 pt-2">
+                <div class="p-4 rounded-2xl space-y-3" style="background: var(--glass); border: 1px solid var(--border); backdrop-filter: blur(8px);">
+                    <div class="flex justify-between text-sm" style="color: var(--hint);">
+                        <span>Сумма</span>
+                        <span id="summary-subtotal" class="font-semibold" style="font-family: 'JetBrains Mono', monospace;">0 ₽</span>
+                    </div>
+                    <div class="flex justify-between text-sm" style="color: var(--amber);">
+                        <span>Скидка 10%</span>
+                        <span id="summary-discount" class="font-semibold" style="font-family: 'JetBrains Mono', monospace;">−0 ₽</span>
+                    </div>
+                    <div style="border-top: 1px solid var(--border);"></div>
+                    <div class="flex justify-between text-base font-black" style="color: var(--green);">
+                        <span>Итого</span>
+                        <span id="summary-total" style="font-family: 'JetBrains Mono', monospace;">0 ₽</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-2xl" style="background: rgba(108,114,245,0.08); border: 1px solid rgba(108,114,245,0.15);">
+                    <i class="fa-brands fa-telegram text-xl" style="color: var(--accent);"></i>
+                    <p class="text-[11px]" style="color: var(--hint);">
+                        Нажмите синюю кнопку <strong style="color: var(--text);">«Оформить заказ»</strong> внизу экрана
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Профиль -->
+        <section id="tab-profile" class="space-y-4 hide">
+            <div class="p-4 rounded-2xl flex items-center gap-4"
+                 style="background: var(--glass); border: 1px solid var(--border); backdrop-filter: blur(8px);">
+                <div id="user-avatar">U</div>
+                <div class="flex-grow min-w-0">
+                    <h4 id="user-name" class="text-base font-bold truncate">Загрузка...</h4>
+                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(108,114,245,0.15); color: #b4b9ff;">Partner</span>
+                        <span class="w-1.5 h-1.5 rounded-full" style="background: var(--green);"></span>
+                        <span class="text-[10px]" style="color: var(--green);">Онлайн</span>
+                    </div>
+                    <p id="user-id-text" class="text-[10px] mt-1" style="font-family: 'JetBrains Mono', monospace; color: var(--hint);">ID: —</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+                <div class="stat-card"><p class="text-lg">💎</p><p class="text-sm font-black mt-1" style="font-family: 'JetBrains Mono', monospace;">1 250</p><p class="text-[10px] mt-0.5" style="color: var(--hint);">Баланс</p></div>
+                <div class="stat-card"><p class="text-lg">🏆</p><p class="text-sm font-black mt-1" style="font-family: 'JetBrains Mono', monospace;">3</p><p class="text-[10px] mt-0.5" style="color: var(--hint);">Проекта</p></div>
+                <div class="stat-card"><p class="text-lg">👥</p><p class="text-sm font-black mt-1" style="font-family: 'JetBrains Mono', monospace;">12</p><p class="text-[10px] mt-0.5" style="color: var(--hint);">Рефералов</p></div>
+            </div>
+
+            <div class="p-4 rounded-2xl space-y-3" style="background: var(--glass); border: 1px solid var(--border);">
+                <h4 class="text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-share-nodes" style="color: var(--accent);"></i>Реферальная ссылка</h4>
+                <p class="text-xs" style="color: var(--hint);">Приглашайте партнёров и получайте <strong style="color: var(--amber);">10%</strong> от их заказов.</p>
+                <div class="ref-box">
+                    <code id="ref-link">https://t.me/hakkiai_bot?start=ref000</code>
+                    <button onclick="copyRef()" class="text-xs font-bold px-3 py-1.5 rounded-xl flex-shrink-0"
+                            style="background: rgba(108,114,245,0.12); color: var(--accent);">
+                        <i class="fa-solid fa-copy mr-1"></i>Копировать
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 rounded-2xl" style="background: var(--glass); border: 1px solid var(--border);">
+                <h4 class="text-sm font-bold mb-3 flex items-center gap-2"><i class="fa-solid fa-headset" style="color: var(--accent);"></i>Поддержка</h4>
+                <div class="flex gap-2">
+                    <button class="flex-1 text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-2"
+                            style="background: rgba(108,114,245,0.1); color: var(--accent); border: 1px solid rgba(108,114,245,0.2);">
+                        <i class="fa-brands fa-telegram"></i> Telegram
+                    </button>
+                    <button class="flex-1 text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-2"
+                            style="background: rgba(61,214,140,0.06); color: var(--green); border: 1px solid rgba(61,214,140,0.2);">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="toast">✓ Добавлено</div>
+
+    <!-- Нижняя навигация -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 flex backdrop-blur-xl"
+         style="background: rgba(11,13,19,0.8); border-top: 1px solid var(--border);">
+        <button onclick="switchTab('catalog')" id="nav-catalog" class="nav-btn active-tab">
+            <i class="fa-solid fa-layer-group text-lg"></i><span>Каталог</span>
+        </button>
+        <button onclick="switchTab('cart')" id="nav-cart" class="nav-btn">
+            <i class="fa-solid fa-basket-shopping text-lg"></i><span>Корзина</span>
+            <span id="cart-badge" class="absolute top-2 right-1/2 translate-x-3 text-[9px] font-black px-1.5 py-0.5 rounded-full hide"
+                  style="background: var(--btn); color: var(--btn-text);">0</span>
+        </button>
+        <button onclick="switchTab('profile')" id="nav-profile" class="nav-btn">
+            <i class="fa-solid fa-id-card text-lg"></i><span>Кабинет</span>
+        </button>
+    </nav>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            document.getElementById('user-name').textContent = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+            document.getElementById('user-id-text').textContent = 'ID: ' + user.id;
+            document.getElementById('ref-link').textContent = `https://t.me/hakkiai_bot?start=ref${user.id}`;
+            const avatar = document.getElementById('user-avatar');
+            if (user.photo_url) avatar.innerHTML = `<img src="${user.photo_url}" alt="">`;
+            else avatar.textContent = user.first_name.charAt(0).toUpperCase();
+        }
+
+        const PRODUCTS = [
+            { id: 0, name: 'ИИ-Консультант (Поддержка)', price: 30000 },
+            { id: 1, name: 'Кастомный Mini App Магазин',  price: 45000 },
+            { id: 2, name: 'Умная Автоворонка Продаж',    price: 15000 },
+            { id: 3, name: 'Telegram-бот под ключ',      price: 25000 },
+        ];
+
+        let cart = {};
+
+        function addToCart(productId) {
+            cart[productId] = (cart[productId] || 0) + 1;
+            tg.HapticFeedback.notificationOccurred('success');
+            const btn = document.getElementById(`btn-${productId}`);
+            btn.classList.add('added');
+            btn.innerHTML = `<i class="fa-solid fa-check text-xs"></i> В корзине (${cart[productId]})`;
+            showToast(`✓ ${PRODUCTS[productId].name.slice(0, 25)}…`);
+            updateCartUI();
+        }
+
+        function changeCount(productId, delta) {
+            cart[productId] = (cart[productId] || 0) + delta;
+            if (cart[productId] <= 0) delete cart[productId];
+            const btn = document.getElementById(`btn-${productId}`);
+            if (btn) {
+                if (cart[productId]) {
+                    btn.classList.add('added');
+                    btn.innerHTML = `<i class="fa-solid fa-check text-xs"></i> В корзине (${cart[productId]})`;
+                } else {
+                    btn.classList.remove('added');
+                    btn.innerHTML = `<i class="fa-solid fa-plus text-xs"></i> Добавить`;
+                }
+            }
+            tg.HapticFeedback.impactOccurred('light');
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const ids = Object.keys(cart).map(Number);
+            const total_count = ids.reduce((s, id) => s + cart[id], 0);
+            const badge = document.getElementById('cart-badge');
+            if (total_count > 0) { badge.textContent = total_count; badge.classList.remove('hide'); }
+            else { badge.classList.add('hide'); }
+
+            const itemsContainer = document.getElementById('cart-items');
+            const emptyBlock     = document.getElementById('cart-empty');
+            const summaryBlock   = document.getElementById('cart-summary');
+
+            if (ids.length === 0) {
+                emptyBlock.classList.remove('hide');
+                itemsContainer.innerHTML = '';
+                summaryBlock.classList.add('hide');
+            } else {
+                emptyBlock.classList.add('hide');
+                summaryBlock.classList.remove('hide');
+                let html = '', subtotal = 0;
+                ids.forEach(id => {
+                    const p = PRODUCTS[id], qty = cart[id], cost = p.price * qty;
+                    subtotal += cost;
+                    html += `
+                    <div class="cart-item">
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <div>
+                                <h5 class="text-sm font-bold">${p.name}</h5>
+                                <p class="text-sm font-bold mt-0.5" style="font-family: 'JetBrains Mono', monospace; color: var(--green);">${fmt(cost)} ₽</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs" style="color: var(--hint);">${fmt(p.price)} ₽ / шт.</p>
+                            <div class="cart-counter-controls">
+                                <button onclick="changeCount(${id}, -1)">−</button>
+                                <span>${qty}</span>
+                                <button onclick="changeCount(${id}, +1)">+</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                itemsContainer.innerHTML = html;
+                const discount = Math.round(subtotal * 0.10), total = subtotal - discount;
+                document.getElementById('summary-subtotal').textContent = fmt(subtotal) + ' ₽';
+                document.getElementById('summary-discount').textContent = '−' + fmt(discount) + ' ₽';
+                document.getElementById('summary-total').textContent    = fmt(total) + ' ₽';
+            }
+            updateMainButton();
+        }
+
+        function updateMainButton() {
+            const isCartTab = !document.getElementById('tab-cart').classList.contains('hide');
+            const ids = Object.keys(cart).map(Number);
+            if (isCartTab && ids.length > 0) {
+                const subtotal = ids.reduce((s, id) => s + PRODUCTS[id].price * cart[id], 0);
+                const total = subtotal - Math.round(subtotal * 0.10);
+                tg.MainButton.setText(`Оформить заказ — ${fmt(total)} ₽`);
+                tg.MainButton.show();
+            } else { tg.MainButton.hide(); }
+        }
+
+        tg.onEvent('mainButtonClicked', function () {
+            const ids = Object.keys(cart).map(Number);
+            const items = ids.map(id => ({
+                id, name: PRODUCTS[id].name, price: PRODUCTS[id].price,
+                qty: cart[id], total: PRODUCTS[id].price * cart[id]
+            }));
+            const subtotal = items.reduce((s, i) => s + i.total, 0);
+            const discount = Math.round(subtotal * 0.10);
+            const total = subtotal - discount;
+            const payload = { user_id: user?.id || 0, username: user?.username || '', items, subtotal, discount, total };
+            tg.MainButton.showProgress(false);
+            tg.sendData(JSON.stringify(payload));
+        });
+
+        function switchTab(name) {
+            ['catalog', 'cart', 'profile'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hide');
+                document.getElementById(`nav-${t}`).classList.remove('active-tab');
+            });
+            document.getElementById(`tab-${name}`).classList.remove('hide');
+            document.getElementById(`nav-${name}`).classList.add('active-tab');
+            updateMainButton();
+        }
+
+        function fmt(n) { return n.toLocaleString('ru-RU'); }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function copyRef() {
+            const link = document.getElementById('ref-link').textContent;
+            if (navigator.clipboard) { navigator.clipboard.writeText(link).then(() => { tg.HapticFeedback.notificationOccurred('success'); showToast('🔗 Ссылка скопирована!'); }); }
+        }
+    </script>
+</body>
+</html>
